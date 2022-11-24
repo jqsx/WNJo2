@@ -1,0 +1,52 @@
+{
+    "square": {
+        "scale": {
+            "x": 16,
+            "y": 16
+        },
+        "isSolid": true,
+        "strength": 5,
+        "isBreakable": true,
+        "type": "rock"
+    },
+    "tree": {
+        "scale": {
+            "x": 16,
+            "y": 32
+        },
+        "isSolid": false,
+        "strength": 10,
+        "isBreakable": true,
+        "type": "wood"
+    },
+    "shortgrass": {
+        "scale": {
+            "x": 8,
+            "y": 8
+        },
+        "isSolid": false,
+        "strength": 1,
+        "isBreakable": false,
+        "type": "none"
+    },
+    "void": {
+        "scale": {
+            "x": 32,
+            "y": 32
+        },
+        "isSolid": true,
+        "strength": 0.001,
+        "isBreakable": true,
+        "type": "rock"
+    },
+    "bigsquare": {
+        "scale": {
+            "x": 32,
+            "y": 32
+        },
+        "isSolid": true,
+        "strength": 1,
+        "isBreakable": false,
+        "type": "rock"
+    }
+}

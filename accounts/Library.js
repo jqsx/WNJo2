@@ -1,0 +1,36 @@
+module.exports = {
+    Categories: ["Axes", "Pickaxes", "Swords", "Guns", "MultiTools", "Structures", "Deployables"],
+    Axes: [{
+        Name: "Stone Axe",
+        AttackType: "solidsDamage",
+        UseType: "none",
+        Power: 20,
+        UseDelay: 500
+    }],
+    Pickaxes: [{
+        Name: "Stone Pickaxe",
+        AttackType: "solidsDamage",
+        UseType: "none",
+        Power: 20,
+        UseDelay: 500
+    }],
+    Swords: [
+
+    ],
+    Guns: [
+
+    ],
+    MultiTools: [{
+        Name: "Rock",
+        AttackType: "solidsDamage",
+        UseType: "none",
+        Power: 10,
+        UseDelay: 700
+    }],
+    Structures: [
+
+    ],
+    Deployables: [
+
+    ]
+}
