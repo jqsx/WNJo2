@@ -4,10 +4,49 @@ body {
 }
 
 .Screen {
-    background-color: #333;
+    background-image: url('../../src/floor.png');
+    background-size: 10%;
+    image-rendering: pixelated;
+}
+
+.FRAME {
+    background-color: #ddd;
     position: absolute;
     top: 0%;
     bottom: 0%;
     left: 0%;
     right: 0%;
+}
+
+.InfoDisplay {
+    background-color: #AAAAAA;
+    border-radius: 20px;
+    padding: 20px 20px 20px 20px;
+    width: 30%;
+    text-align: center;
+    left: 35%;
+    top: 10%;
+    color: #fff;
+    text-shadow: #111 1px 1px;
+    position: absolute;
+    animation: InfoDisplay 3s ease-in-out;
+}
+
+* {
+    font-family: 'Courier New', Courier, monospace;
+}
+
+@keyframes InfoDisplay {
+    0% {
+        opacity: 0;
+    }
+    25% {
+        opacity: 1;
+    }
+    75% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+    }
 }

@@ -1,15 +1,35 @@
+const config = {
+    port: 3000,
+    WebSocketPort: 7777,
+    WorldSettings: {
+        ServerName: "WNJO Server",
+        WorldSeed: 1234,
+        WorldSize: 5000,
+        PlayerCap: 100
+    }
+}
+
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const uuid = require('uuid');
 const app = express();
 const WebSocket = require('ws');
-const wss = new WebSocket.Server({ port: 7777 });
+const wss = new WebSocket.Server({ port: config.WebSocketPort });
+
+app.use(express.static(path.join(__dirname, 'Client')));
 
 const Clients = new Map();
 const Accounts = new Map();
 const QuickLog = new Map();
 const Players = new Map();
+
+process.on('SIGINT', () => {
+    Accounts.forEach((value, key) => {
+        // new file for each account to prevent corruption
+    })
+    process.exit();
+})
 
 wss.on('connection', (ws, req) => {
     ws.onmessage = (data) => {
@@ -24,10 +44,11 @@ wss.on('connection', (ws, req) => {
             console.log(e);
         }
     }
-    ws.onopen = (data) => {
+    ws.onopen = () => {
         sendJson(ws, {
             type: "Welcome"
         })
+        console.log("welcome");
     }
     ws.onclose = (data) => {
         Clients.delete(ws);
@@ -74,9 +95,33 @@ const handleAccountActions = (ws, data) => {
                         Players.set(data.Name, new Player(acc._id, acc.Name));
                         Clients.set(ws, { _id: acc._id });
                         QuickLog.set(_quicklog, data.Name);
+                        sendMessage(ws, {
+                            status: 200,
+                            message: "You have been successfully logged in. Welcome " + data.Name
+                        })
+                    } else {
+                        sendMessage(ws, {
+                            status: 404,
+                            message: "Wrong password. Please try again."
+                        })
                     }
+                } else {
+                    sendMessage(ws, {
+                        status: 404,
+                        message: "Error: Missing Password."
+                    })
                 }
+            } else {
+                sendMessage(ws, {
+                    status: 404,
+                    message: "An account with that name doesnt exist"
+                })
             }
+        } else {
+            sendMessage(ws, {
+                status: 404,
+                message: "Error: Missing Name."
+            })
         }
     } else if (data.action === 'CreateAccount') {
         if (Accounts.get(data.Name)) return sendMessage(ws, {
@@ -103,7 +148,7 @@ const handleAccountActions = (ws, data) => {
                     },
                     rotation: 0
                 })
-                return sendError(ws, {
+                return sendMessage(ws, {
                     status: 200,
                     message: `Successfully created a new account ${data.Name}.`
                 })
@@ -128,6 +173,7 @@ const sendJson = (ws, data) => {
 
 const sendMessage = (ws, data) => {
     sendJson(ws, {
+        type: "INFO",
         status: data.status,
         message: data.message
     })
@@ -214,6 +260,6 @@ app.get('/Client/ClientStyles/styles.css', (req, res) => {
     res.sendFile(path.join(__dirname, '/Client/ClientStyles/styles.css'));
 })
 
-app.listen(3000, () => {
-
+app.listen(config.port, () => {
+    console.log(`Listening on ${config.port}!`);
 })

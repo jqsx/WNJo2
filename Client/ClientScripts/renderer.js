@@ -1,11 +1,12 @@
 const screen = document.createElement('div');
 document.body.appendChild(screen);
+screen.classList.add('FRAME');
+screen.classList.add('Screen');
 
 const windowSize = {
     width: window.innerWidth,
     height: window.innerHeight
 }
-screen.className = 'Screen';
 
 var Players = [];
 var Chunks = new Map();
