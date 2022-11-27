@@ -3,6 +3,7 @@ const config = {
     WebSocketPort: 7777,
     WorldSettings: {
         ServerName: "WNJO Server",
+        Description: "A WNJO server",
         WorldSeed: 1234,
         WorldSize: 5000,
         PlayerCap: 100
@@ -20,14 +21,17 @@ const wss = new WebSocket.Server({ port: config.WebSocketPort });
 app.use(express.static(path.join(__dirname, 'Client')));
 
 const Clients = new Map();
-const Accounts = new Map();
+var Accounts = new Map();
+fs.readFile(path.join(__dirname, 'accounts/Accounts.json'), (err, data) => {
+    if (err) return console.log("Was unable to load account data.");
+    Accounts = new Map(JSON.parse(data));
+});
 const QuickLog = new Map();
 const Players = new Map();
 
 process.on('SIGINT', () => {
-    Accounts.forEach((value, key) => {
-        // new file for each account to prevent corruption
-    })
+    fs.writeFileSync(path.join(__dirname, 'accounts/Accounts.json'), JSON.stringify(Accounts));
+    fs.writeFileSync(path.join(__dirname, 'WorldSave/Players.json'), JSON.stringify(Players));
     process.exit();
 })
 
@@ -72,7 +76,7 @@ const handleAccountActions = (ws, data) => {
                         QuickLoginKey: _quicklog
                     })
                     Clients.set(ws, { _id: acc._id });
-                    QuickLog.set(_quicklog, data.Name);
+                    QuickLog.set(_quicklog, acc.Name);
                     sendMessage(ws, {
                         status: 200,
                         message: "You have been successfully quick logged in."
@@ -92,9 +96,9 @@ const handleAccountActions = (ws, data) => {
                             Name: acc.Name,
                             QuickLoginKey: _quicklog
                         })
-                        Players.set(data.Name, new Player(acc._id, acc.Name));
+                        Players.set(acc.Name, new Player(acc._id, acc.Name));
                         Clients.set(ws, { _id: acc._id });
-                        QuickLog.set(_quicklog, data.Name);
+                        QuickLog.set(_quicklog, acc.Name);
                         sendMessage(ws, {
                             status: 200,
                             message: "You have been successfully logged in. Welcome " + data.Name
@@ -242,6 +246,14 @@ class Player {
 
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
+})
+app.get('/info', (req, res) => {
+    res.send(JSON.stringify({
+        ServerName: config.WorldSettings.ServerName,
+        PlayerCap: config.WorldSettings.PlayerCap,
+        WorldSize: config.WorldSettings.WorldSize,
+        Description: config.WorldSettings.Description
+    }))
 })
 
 app.get('/Client/ClientScripts/network.js', (req, res) => {
