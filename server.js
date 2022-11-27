@@ -42,7 +42,12 @@ wss.on('connection', (ws, req) => {
             if (message.type === 'Account') {
                 handleAccountActions(ws, message);
             } else if (message.type === 'SYNC') {
-
+                let player = Players.get(message.Name);
+                let delivered = player.setData(ws, message);
+                if (!delivered) return sendMessage(ws, {
+                    status: 404,
+                    message: "Error while syncing, please refresh the website."
+                })
             }
         } catch (e) {
             console.log(e);
@@ -218,8 +223,8 @@ class Player {
                 x: data.position.x - data.position.x,
                 y: data.position.y - data.position.y
             }
-            let distance = Math.sqrt(diff.x * diff.x + diff.y * diff.y);
-            if (distance < 2) {
+            let distance = Math.abs(diff.x) + Math.abs(diff.y);
+            if (distance <= 2) {
                 this.position.x = data.position.x;
                 this.position.y = data.position.y;
             }
@@ -230,7 +235,7 @@ class Player {
                     x: value.position.x - this.position.x,
                     y: value.position.y - this.position.y
                 }
-                if (Math.sqrt(diff.x * diff.x + diff.y * diff.y) < 300) {
+                if (Math.abs(diff.x) < 300 && Math.abs(diff.y) < 300) {
                     _sendData.push(value.toClient());
                 }
             })
@@ -238,9 +243,9 @@ class Player {
                 type: "SYNC",
                 body: _sendData
             })
-        } else {
-            return;
-        }
+            return true;
+        } 
+        return false;
     }
 }
 
