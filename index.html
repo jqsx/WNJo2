@@ -10,11 +10,59 @@
 </head>
 
 <body>
-    <div id="FRAME.Login" class="FRAME" style="display: grid;">
-        <label for="FRAME.Login.isCreateNew">Create new account: </label>
-        <input id="FRAME.Login.isCreateNew" type="checkbox">
-        <input id="FRAME.Login.Name" type="text" placeholder="Name">
-        <input id="FRAME.Login.Password" type="password" placeholder="Password">
+    <div id="FRAME-MainMenu" class="FRAME">
+        <h1 class=" MAINTITLE ">WNJO</h1>
+        <div class="WINDOW " style="top: 50%; background-color: transparent;">
+            <button class="RequireLogin">Play</button>
+            <button onclick="openWindow('About')" class="BUTTON ">About</button>
+            <button onclick="openWindow('ChangeLog')" class="BUTTON ">Change Log</button>
+            <button class="BUTTON ">Forum (Coming soon)</button>
+            <button onclick="openWindow('Settings')" class="BUTTON ">Settings</button>
+        </div>
+        <button onclick="displayLoginWindow()" class="AccountInfo"></button>
+        <div id="WINDOW-Login" class="WINDOW iAmHiding" style="display:flexbox; right: 30px; top: 150px;">
+            <h4 style="transform: translateX(50px);">Creating new account? <input id="FRAME.Login.isCreateNew" type="checkbox"></h4>
+            <input class="BUTTON " id="FRAME.Login.Name" type="text" placeholder="Name">
+            <input class="BUTTON " id="FRAME.Login.Password" type="password" placeholder="Password">
+            <button class="BUTTON " onclick="figuremyshitout()">Submit</button>
+        </div>
+        <div id="WINDOW-Account" class="WINDOW iAmHiding" style="display:flexbox; right: 30px; top: 150px;">
+        </div>
+        <div id="WINDOW-Play" class="WINDOW iAmHiding" style="display:flexbox; left: calc(50% - var(--w) / 2); top: 30%;">
+        </div>
+        <div id="WINDOW-About" class="WINDOW iAmHiding" style="display:flexbox; left: calc(50% - var(--w) / 2); top: 30%;">
+            <p class="TEXTBAR">About</p>
+            <p>Welcome to wnjo, insert about here</p>
+        </div>
+        <div id="WINDOW-ChangeLog" class="WINDOW iAmHiding" style="display:flexbox; left: calc(50% - var(--w) / 2); top: 30%;">
+            <p class="TEXTBAR">Change Log</p>
+            <p>Implemented accounts and quicklog</p>
+        </div>
+        <div id="WINDOW-Settings" class="WINDOW iAmHiding" style="display:flexbox; left: calc(50% - var(--w) / 2); top: 30%; --w: 600px;">
+            <p class="TEXTBAR">Settings</p>
+            <p>Volume <input type="range"></p>
+            <select class="TEXTBAR" name="Test">
+                <option value="1">setting one</option>
+                <option value="2">setting two</option>
+                <option value="3">setting three</option>
+            </select>
+            <div class="TEXTBAR">
+                <p class="TEXTBAR">Keycode <button class="TEXTBAR keycode">Test</button></p>
+                <p class="TEXTBAR">Keycode <button class="TEXTBAR keycode">Test</button></p>
+                <p class="TEXTBAR">Keycode <button class="TEXTBAR keycode">Test</button></p>
+                <p class="TEXTBAR">Keycode <button class="TEXTBAR keycode">Test</button></p>
+                <p class="TEXTBAR">Keycode <button class="TEXTBAR keycode">Test</button></p>
+                <p class="TEXTBAR">Keycode <button class="TEXTBAR keycode">Test</button></p>
+            </div>
+        </div>
+        <script>
+            const mainMenuBG = document.getElementById('FRAME-MainMenu');
+            var i = 0;
+            setInterval(() => {
+                mainMenuBG.style.backgroundPositionY = `${i++}px`;
+                mainMenuBG.style.backgroundPositionX = `${Math.floor(Math.cos(i * Math.PI / 360) * 500)}px`;
+            }, 50)
+        </script>
     </div>
 </body>
 

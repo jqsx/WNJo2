@@ -7,10 +7,23 @@ const config = {
         WorldSeed: 1234,
         WorldSize: 5000,
         PlayerCap: 100
-    }
+    },
+    AdminPanelKey: '123' // replace with whatever you want the password to be
 }
 
+/**
+ * npm imports:
+ * - express
+ * - cryptkhen
+ * - uuid
+ * - ws
+ * - simplex noise
+ */
+
 const express = require('express');
+const cryptkhen = require('@ryanbekhen/cryptkhen')
+const aes256 = new cryptkhen.AES256Encryption(config.AdminPanelKey);
+const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const uuid = require('uuid');
@@ -24,15 +37,29 @@ const Clients = new Map();
 var Accounts = new Map();
 fs.readFile(path.join(__dirname, 'accounts/Accounts.json'), (err, data) => {
     if (err) return console.log("Was unable to load account data.");
-    Accounts = new Map(JSON.parse(data));
+    const parsed = JSON.parse(data);
+    parsed.forEach(e => {
+        Accounts.set(e.key, e.value);
+    })
 });
 const QuickLog = new Map();
 const Players = new Map();
 
 process.on('SIGINT', () => {
-    fs.writeFileSync(path.join(__dirname, 'accounts/Accounts.json'), JSON.stringify(Accounts));
-    fs.writeFileSync(path.join(__dirname, 'WorldSave/Players.json'), JSON.stringify(Players));
     process.exit();
+})
+
+process.on('exit', () => {
+    let _a = [];
+    Accounts.forEach((value, key, map) => {
+        _a.push({
+            key: key,
+            value: value
+        })
+    })
+    fs.writeFileSync('./accounts/Accounts.json', JSON.stringify(_a));
+    fs.writeFileSync(path.join(__dirname, 'WorldSave/Players.json'), JSON.stringify(Players));
+    console.log("\nSaved players, and accounts.");
 })
 
 wss.on('connection', (ws, req) => {
@@ -43,11 +70,17 @@ wss.on('connection', (ws, req) => {
                 handleAccountActions(ws, message);
             } else if (message.type === 'SYNC') {
                 let player = Players.get(message.Name);
-                let delivered = player.setData(ws, message);
-                if (!delivered) return sendMessage(ws, {
-                    status: 404,
-                    message: "Error while syncing, please refresh the website."
-                })
+                if (player !== undefined) {
+                    let delivered = player.setData(ws, message);
+                    if (!delivered) return sendMessage(ws, {
+                        status: 404,
+                        message: "Error while syncing, please refresh the website."
+                    })
+                }
+            } else if (message.type === 'Inventory') {
+                inventoryActions(ws, message);
+            } else if (message.type === 'PlayerAction') {
+                playerActions(ws, message);
             }
         } catch (e) {
             console.log(e);
@@ -68,37 +101,17 @@ wss.on('connection', (ws, req) => {
 })
 
 const handleAccountActions = (ws, data) => {
-    if (data.action === 'Login') {
-        if ("QuickLog" in data) {
-            let ql = QuickLog.get(data.QuickLog);
-            if (ql !== undefined) {
-                let acc = Accounts.get(ql);
-                if (acc !== undefined) {
-                    let _quicklog = uuid.v1();
-                    sendJson(ws, {
-                        type: "Login",
-                        Name: acc.Name,
-                        QuickLoginKey: _quicklog
-                    })
-                    Clients.set(ws, { _id: acc._id });
-                    QuickLog.set(_quicklog, acc.Name);
-                    sendMessage(ws, {
-                        status: 200,
-                        message: "You have been successfully quick logged in."
-                    })
-                }
-            }
-            return;
-        }
-        if ("Name" in data) {
+    if ("Name" in data) {
+        if ("Password" in data) {
             let acc = Accounts.get(data.Name)
-            if (acc) {
-                if ("Password" in data) {
-                    if (acc.Password === data.Password) {
+            if (data.action === 'Login') {
+                if (acc) {
+                    if (aes256.decrypt(Buffer.from(acc.Password, 'base64')).toString() === data.Password) {
                         let _quicklog = uuid.v1();
                         sendJson(ws, {
                             type: "Login",
                             Name: acc.Name,
+                            coins: acc.points,
                             QuickLoginKey: _quicklog
                         })
                         Players.set(acc.Name, new Player(acc._id, acc.Name));
@@ -115,36 +128,47 @@ const handleAccountActions = (ws, data) => {
                         })
                     }
                 } else {
-                    sendMessage(ws, {
+                    return sendMessage(ws, {
                         status: 404,
-                        message: "Error: Missing Password."
+                        message: "Account doesn't exist."
                     })
                 }
-            } else {
-                sendMessage(ws, {
+            } else if (data.action === 'CreateAccount') {
+                if (acc) return sendMessage(ws, {
                     status: 404,
-                    message: "An account with that name doesnt exist"
-                })
-            }
-        } else {
-            sendMessage(ws, {
-                status: 404,
-                message: "Error: Missing Name."
-            })
-        }
-    } else if (data.action === 'CreateAccount') {
-        if (Accounts.get(data.Name)) return sendMessage(ws, {
-            status: 404,
-            message: "An account with that name already exists."
-        });
-        if ("Name" in data) {
-            if ("Password" in data) {
+                    message: "An account with that name already exists."
+                });
+                if (data.Password.length < 5) {
+                    return sendMessage(ws, {
+                        status: 404,
+                        message: "Password is too short."
+                    })
+                } else if (data.Password.length > 32) {
+                    return sendMessage(ws, {
+                        status: 404,
+                        message: "Password is too long."
+                    })
+                } else if (data.Name.length < 3) {
+                    return sendMessage(ws, {
+                        status: 404,
+                        message: "Name is too short."
+                    })
+                } else if (data.Name.length > 16) {
+                    return sendMessage(ws, {
+                        status: 404,
+                        message: "Name is too long."
+                    })
+                }
                 let newUUID = uuid.v1();
                 let _quicklog = uuid.v1();
-                Accounts.set(data.Name, new AccountInformation(data.Name, data.Password, newUUID));
+                let password = data.Password;
+                const passBuffer = Buffer.from(password);
+                password = aes256.encrypt(passBuffer).toString('base64');
+                Accounts.set(data.Name, new AccountInformation(data.Name, password, newUUID));
                 sendJson(ws, {
                     type: "Login",
                     Name: data.Name,
+                    coins: acc.points,
                     QuickLoginKey: _quicklog
                 })
                 QuickLog.set(_quicklog, data.Name);
@@ -161,19 +185,40 @@ const handleAccountActions = (ws, data) => {
                     status: 200,
                     message: `Successfully created a new account ${data.Name}.`
                 })
-            } else {
-                return sendMessage(ws, {
-                    status: 404,
-                    message: "Password input not found."
+            }
+        }
+    } else if ("QuickLog" in data) {
+        let ql = QuickLog.get(data.QuickLog);
+        if (ql !== undefined) {
+            let acc = Accounts.get(ql);
+            if (acc !== undefined) {
+                let _quicklog = uuid.v1();
+                sendJson(ws, {
+                    type: "Login",
+                    Name: acc.Name,
+                    coins: acc.points,
+                    QuickLoginKey: _quicklog
+                })
+                Clients.set(ws, { _id: acc._id });
+                QuickLog.set(_quicklog, acc.Name);
+                sendMessage(ws, {
+                    status: 200,
+                    message: "You have been successfully quick logged in."
                 })
             }
-        } else {
-            return sendMessage(ws, {
-                status: 404,
-                message: "Name input not found."
-            })
         }
+        return;
     }
+}
+
+const inventoryActions = (ws, data) => {
+    if (data.action === 'move') {
+
+    }
+}
+
+const playerActions = (ws, data) => {
+
 }
 
 const sendJson = (ws, data) => {
@@ -188,11 +233,15 @@ const sendMessage = (ws, data) => {
     })
 }
 
+
+
 class AccountInformation {
     constructor(Name, Password, _id) {
         this.Name = Name;
         this.Password = Password;
         this._id = _id;
+        this.points = 0;
+        this.status = 'User';
     }
 }
 
@@ -218,7 +267,20 @@ class Player {
     }
 
     setData(ws, data) {
+        /**
+         * Required
+         * position
+         * rotation
+         * 
+         */
         if (Clients.get(ws)._id === this.uuid) {
+            if (!("position" in data) || !("rotation" in data)) {
+                sendMessage(ws, {
+                    status: 404,
+                    message: "Error: Error sync parameters."
+                })
+                return false;
+            }
             let diff = {
                 x: data.position.x - data.position.x,
                 y: data.position.y - data.position.y
@@ -244,7 +306,7 @@ class Player {
                 body: _sendData
             })
             return true;
-        } 
+        }
         return false;
     }
 }
@@ -253,16 +315,22 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 })
 app.get('/info', (req, res) => {
-    res.send(JSON.stringify({
+    res.send({
         ServerName: config.WorldSettings.ServerName,
         PlayerCap: config.WorldSettings.PlayerCap,
         WorldSize: config.WorldSettings.WorldSize,
-        Description: config.WorldSettings.Description
-    }))
+        Description: config.WorldSettings.Description,
+        OnlinePlayers: Players.size,
+        officialServer: true
+    })
 })
 
 app.get('/Client/ClientScripts/network.js', (req, res) => {
     res.sendFile(path.join(__dirname, '/Client/ClientScripts/network.js'));
+})
+
+app.get('/favicon.ico', (req, res) => {
+    res.sendFile(path.join(__dirname, '/favicon.ico'));
 })
 
 app.get('/Client/ClientScripts/renderer.js', (req, res) => {
@@ -276,6 +344,33 @@ app.get('/Client/ClientScripts/userInput.js', (req, res) => {
 app.get('/Client/ClientStyles/styles.css', (req, res) => {
     res.sendFile(path.join(__dirname, '/Client/ClientStyles/styles.css'));
 })
+
+app.get('/admin', (req, res) => {
+    let options = req.url.replace("/admin?", "").split(";").filter(obj => obj !== '');
+    options.forEach(value => {
+        let ss = value.split(":");
+        if (ss[0] === 'key' && ss[1] === config.AdminPanelKey) {
+            res.sendFile(path.join(__dirname, 'adminPanel.html'));
+        }
+    })
+})
+
+var cpuUsage = process.cpuUsage();
+
+app.post('/admin', (req, res) => {
+    let options = req.url.replace("/admin?", "").split(";").filter(obj => obj !== '');
+    options.forEach(value => {
+        let ss = value.split(":");
+        if (ss[0] === 'key' && ss[1] === config.AdminPanelKey) {
+            cpuUsage = process.cpuUsage(cpuUsage);
+            res.send({
+                memory: Math.round(cpuUsage.user / 1024 / 1024 * 1000) / 1000
+            })
+        }
+    })
+})
+
+app.use('/client', express.static(__dirname + '/Client'));
 
 app.listen(config.port, () => {
     console.log(`Listening on ${config.port}!`);

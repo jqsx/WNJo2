@@ -7,6 +7,7 @@ body {
     background-image: url('../../src/floor.png');
     background-size: 10%;
     image-rendering: pixelated;
+    z-index: -1;
 }
 
 .FRAME {
@@ -16,6 +17,108 @@ body {
     bottom: 0%;
     left: 0%;
     right: 0%;
+}
+
+.WINDOW {
+    --w: 400px;
+    position: absolute;
+    width: var(--w);
+    justify-content: center;
+    display: grid;
+    background-color: rgba(200, 200, 200, 0.7);
+    padding: 10px 20px 10px 20px;
+    border-radius: 30px;
+}
+
+.AccountInfo {
+    border-radius: 50%;
+    width: 70px;
+    height: 70px;
+    position: absolute;
+    top: 30px;
+    right: 30px;
+    border: none;
+    background-image: url('../src/ui/person_FILL0_wght400_GRAD0_opsz48.png');
+    background-size: 100%;
+    image-rendering: crisp-edges;
+    box-shadow: rgba(100, 100, 100, 0.7) 3px 3px;
+    transform: translate(-2px, -2px);
+}
+
+.BUTTON {
+    width: inherit;
+    height: 50px;
+    margin-top: 10px;
+    margin-left: 20px;
+    border: #CCC 1px solid;
+    outline: none;
+    transition: 0.3s;
+    box-shadow: rgba(100, 100, 100, 0.7) 3px 3px;
+    transform: translate(-2px, -2px);
+    font-size: large;
+    border-radius: 20px;
+}
+
+.RequireLogin {
+    width: inherit;
+    height: 50px;
+    margin-top: 10px;
+    margin-left: 20px;
+    border: #777 1px solid;
+    background-color: rgba(100, 100, 100, 0.7);
+    outline: none;
+    transition: 0.3s;
+    transform: translate(3px, 3px);
+    font-size: large;
+    border-radius: 20px;
+    cursor: not-allowed;
+    color: #666;
+}
+
+.BUTTON:hover {
+    animation: BUTTONHOVER 0.1s;
+}
+
+.BUTTON:active {
+    transform: translate(3px, 3px);
+    background-color: rgba(100, 100, 100, 1);
+    box-shadow: rgba(100, 100, 100, 0.7) 0px 0px;
+}
+
+.AccountInfo:hover {
+    animation: BUTTONHOVER 0.1s;
+}
+
+.AccountInfo:active {
+    transform: translate(3px, 3px);
+    background-color: rgba(100, 100, 100, 1);
+    box-shadow: rgba(100, 100, 100, 0.7) 0px 0px;
+}
+
+.iAmHiding {
+    display: none;
+}
+
+@keyframes BUTTONHOVER {
+    0% {
+        transform: translate(-2px, -2px) scale(1, 1);
+    }
+    30% {
+        transform: translate(-2px, -2px) scale(1.01, 1.01);
+    }
+    100% {
+        transform: translate(-2px, -2px) scale(1, 1);
+    }
+}
+
+.MAINTITLE {
+    top: 0%;
+    left: 0%;
+    margin-top: 0px;
+    position: absolute;
+    font-size: 300px;
+    color: #000;
+    user-select: none;
 }
 
 .InfoDisplay {
@@ -30,10 +133,18 @@ body {
     text-shadow: #111 1px 1px;
     position: absolute;
     animation: InfoDisplay 3s ease-in-out;
+    z-index: 999;
+}
+
+@font-face {
+    font-family: 'rubik_glitchregular';
+    src: url('../font/rubikglitch-regular-webfont.woff2') format('woff2'), url('../font/rubikglitch-regular-webfont.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
 }
 
 * {
-    font-family: 'Courier New', Courier, monospace;
+    font-family: 'rubik_glitchregular';
 }
 
 @keyframes InfoDisplay {
@@ -49,4 +160,49 @@ body {
     100% {
         opacity: 0;
     }
+}
+
+#FRAME-MainMenu {
+    background-image: url('../src/backgroundMainMenu.png');
+    background-size: 100%;
+    image-rendering: pixelated;
+}
+
+.TEXTBAR {
+    position: relative;
+    background-color: #DDD;
+    padding: 0px 5px 0px 5px;
+    border-radius: 10px;
+    width: inherit;
+    margin-top: 0px;
+    margin-bottom: 0px;
+    border: #CCC 1px solid;
+    user-select: none;
+}
+
+.TEXTBAR.keycode {
+    right: 0px;
+    width: 30%;
+    position: absolute;
+}
+
+.TEXTBAR.keycode {
+    right: 0px;
+    width: 30%;
+    position: absolute;
+    transition: 0.4s;
+}
+
+.TEXTBAR.keycode:hover {
+    right: 0px;
+    width: 30%;
+    position: absolute;
+}
+
+.TEXTBAR.keycode:active {
+    right: 0px;
+    width: 30%;
+    position: absolute;
+    border: black 3px;
+    background-color: lightblue;
 }
