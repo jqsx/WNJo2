@@ -3,8 +3,88 @@ var socket;
 var PlayerName = null;
 var LoggedIn = false;
 var QuickLog = localStorage.getItem("QuickLog");
+var IsLoading = false;
+
+const Debug = {
+    Display: localStorage.getItem('DebugDisplay') !== null ? true : false,
+    Log: (text) => {
+        if (!Debug.Display) return;
+        const p = document.createElement('p');
+        p.className = 'Debug Message';
+        let time = Date.now();
+        let mm = time % 1000;
+        time = Math.floor(time / 1000);
+        let seconds = time % 60;
+        if (seconds <= 9) seconds = "0" + seconds;
+        let minutes = Math.floor(time / 60) % 60;
+        if (minutes <= 9) minutes = "0" + minutes;
+        let hours = Math.floor(time / 3600) % 24;
+        p.innerHTML = `[${hours}:${minutes}:${seconds}:${mm}] ${text}`;
+        const ww = document.getElementById('DebugWindow')
+        ww.appendChild(p);
+        setTimeout(() => {
+            ww.scrollTop = ww.scrollHeight;
+        }, 1)
+    },
+    Error: (text) => {
+        if (!Debug.Display) return;
+        const p = document.createElement('p');
+        p.className = 'Debug Message';
+        p.style.color = 'red';
+        let time = Date.now();
+        let mm = time % 1000;
+        time = Math.floor(time / 1000);
+        let seconds = time % 60;
+        if (seconds <= 9) seconds = "0" + seconds;
+        let minutes = Math.floor(time / 60) % 60;
+        if (minutes <= 9) minutes = "0" + minutes;
+        let hours = Math.floor(time / 3600) % 24;
+        p.innerHTML = `(ERR) [${hours}:${minutes}:${seconds}:${mm}] ${text} (ERR)`;
+        const ww = document.getElementById('DebugWindow')
+        ww.appendChild(p);
+        setTimeout(() => {
+            ww.scrollTop = ww.scrollHeight;
+        }, 1)
+    },
+    SetDisplay: (State) => {
+        if (State) {
+            localStorage.setItem('DebugDisplay', 'true');
+            window.location.reload();
+        } else if (localStorage.getItem('DebugDisplay') !== null) {
+            localStorage.removeItem('DebugDisplay');
+        }
+    }
+}
+if (!Debug.Display) document.getElementById('DebugWindow').parentNode.remove();
+
+const LoadingScreen = {
+    isLoading: false,
+    parts: {
+        left: document.getElementsByClassName('LOADINGSCREEN left')[0],
+        right: document.getElementsByClassName('LOADINGSCREEN right')[0],
+        icon: document.getElementsByClassName('LOADINGSCREEN Icon')[0],
+        main: document.getElementsByClassName('FRAME LOADINGSCREEN')[0]
+    },
+    setCurrentlyLoading: () => {
+        LoadingScreen.parts.left.style.right = '50%';
+        LoadingScreen.parts.right.style.left = '50%';
+        LoadingScreen.parts.main.style.zIndex = '5';
+        LoadingScreen.parts.icon.style.setProperty('--Size', '300px');
+        Debug.Log('LoadingScreen: Initiated Loading Screen.')
+    },
+    stopLoading: () => {
+        LoadingScreen.parts.left.style.right = '100%';
+        LoadingScreen.parts.right.style.left = '100%';
+        LoadingScreen.parts.icon.style.setProperty('--Size', '0px');
+        setTimeout(() => {
+            LoadingScreen.parts.main.style.zIndex = '-2';
+        }, 500);
+        Debug.Log('LoadingScreen: Stopped Loading Screen.')
+    },
+}
 
 const waitForWebSocket = (ws, attempt) => {
+    if (ws.readyState > 1) return;
     if (ws.readyState === 1) {
         if (QuickLog !== undefined || QuickLog !== null) {
             socket.send(JSON.stringify({
@@ -12,6 +92,8 @@ const waitForWebSocket = (ws, attempt) => {
                 action: "Login",
                 QuickLog: QuickLog
             }))
+            setTimeout(() => { if (!LoggedIn) openWindow('Login') }, 10);
+            Debug.Log('Established WebSocket connection.');
         }
         return true;
     } else if (attempt > 20) {
@@ -40,12 +122,18 @@ const Connect = () => {
                 }
                 console.log("Received Server Response: Welcome");
             } else if (message.type === 'Login') {
+                Debug.Log('Received login information from the server.');
+                const rql = document.getElementsByClassName('RequireLogin');
+                for (let i = 0; i < rql.length; i++) {
+                    rql[i].classList.remove('RequireLogin');
+                }
                 LoggedIn = true;
                 PlayerName = message.Name;
                 localStorage.setItem("QuickLog", message.QuickLoginKey);
                 QuickLog = message.QuickLoginKey;
                 document.getElementById('WINDOW-Login').classList.add('iAmHiding');
                 let accountDisplay = document.getElementById('WINDOW-Account');
+                accountDisplay.innerHTML = '';
 
                 const displayText = (message) => {
                     let par = document.createElement('p');
@@ -56,15 +144,24 @@ const Connect = () => {
                 displayText(`Welcome to WNJo`);
                 displayText(`Name: ${message.Name}`);
                 displayText(`Coins: ${message.coins}`);
+                Debug.Log('Setup account information window.');
 
                 // par.textContent = `Name: ${message.Name}`;
                 // accountDisplay.appendChild(par);
 
-                let logoutbutton = document.createElement('button');
-                logoutbutton.onclick = logout;
-                logoutbutton.classList.add('BUTTON');
-                logoutbutton.textContent = `Logout`;
-                accountDisplay.appendChild(logoutbutton);
+                const createButton = (text, func) => {
+                    const button = document.createElement('button');
+                    button.classList.add('BUTTON');
+                    button.classList.add('simple');
+                    button.textContent = text;
+                    button.addEventListener('click', func);
+                    accountDisplay.appendChild(button);
+                }
+
+                createButton('Delete Account', () => {
+                    console.log('deleting account');
+                })
+                createButton('Logout', logout);
 
             } else if (message.type === 'SYNC') {
                 Players = message.body;
@@ -80,10 +177,13 @@ const Connect = () => {
                     _msg.classList.add('InfoDisplay');
                     if (message.status === 200) {
                         _msg.style.backgroundColor = "rgba(0, 255, 0, 0.5)";
+                        Debug.Log(message.message);
                     } else if (message.status === 404) {
                         _msg.style.backgroundColor = "rgba(255, 0, 0, 0.5)";
+                        Debug.Error(message.message);
                     } else if (message.status === 300) {
                         _msg.style.backgroundColor = "rgba(255, 135, 0, 0.5)";
+                        Debug.Log(`(WARNING) ${message.message}`);
                     }
                     _msg.textContent = message.message;
                     const element = document.body.appendChild(_msg);
@@ -103,16 +203,28 @@ const Connect = () => {
         } catch (e) {
             console.log(e);
             console.log(data.data)
+            Debug.Error(e);
         }
     }
-    socket.onerror = () => {
-
+    socket.onerror = (e) => {
+        Debug.Error('WebSocket connection error: ' + e.target);
     }
-    socket.onclose = () => {
+    socket.onclose = (e) => {
+        Debug.Error('WebSocket connection closed. Attempting to reconnect...');
         Connect();
     }
 }
 Connect();
+
+const JoinServer = () => {
+    LoadingScreen.setCurrentlyLoading();
+    setTimeout(() => {
+        document.getElementById('FRAME-MainMenu').classList.add('iAmHiding');
+    }, 500)
+    setTimeout(() => {
+        LoadingScreen.stopLoading();
+    }, 600)
+}
 
 const login = (Name, Password) => {
     socket.send(JSON.stringify({
@@ -138,16 +250,18 @@ const figuremyshitout = () => {
     const isCreatingAccount = document.getElementById("FRAME.Login.isCreateNew").checked;
     if (isCreatingAccount) {
         createAccount(inputName, inputPassword);
+        Debug.Log('Sending account information to server for: CreateAccount');
     } else {
         login(inputName, inputPassword);
+        Debug.Log('Sending account information to server for: Login');
     }
 }
 
 const displayLoginWindow = () => {
     if (LoggedIn) {
-        openWindow('Account');
+        document.getElementById("WINDOW-Account").classList.toggle('iAmHiding');
     } else {
-        openWindow('Login');
+        document.getElementById("WINDOW-Login").classList.toggle('iAmHiding');
     }
 }
 
@@ -164,6 +278,11 @@ const openWindow = (id) => {
         'Settings'
     ]
     document.getElementById("WINDOW-" + id).classList.toggle('iAmHiding');
+    if (document.getElementById("WINDOW-" + id).classList.contains('iAmHiding')) {
+        Debug.Log(`Closed ${id}`);
+    } else {
+        Debug.Log(`Opened ${id}`);
+    }
     Windows.forEach(e => {
         if (e !== id)
             document.getElementById("WINDOW-" + e).classList.add('iAmHiding');
@@ -174,11 +293,55 @@ const Update = () => {
     let StartTime = Date.now();
     if (socket.readyState === 1) {
         socket.send(JSON.stringify({
-            type: "SYNC"
-        }))
+            type: "SYNC",
+            Name: PlayerName,
+            position: RendererData.LocalPlayer.position,
+            rotation: RendererData.LocalPlayer.rotation
+        }));
         render();
     }
     let TimeDifference = Date.now() - StartTime;
     setTimeout(Update, 1000 / 30 - TimeDifference);
 }
-Update();
+setTimeout(Update, 10);
+
+const getMainServer = (json) => {
+    const playwindow = document.getElementById('WINDOW-Play');
+    const newPar = (text) => {
+        const par = document.createElement('p');
+        par.classList.add('TEXTBAR');
+        par.textContent = text;
+        return playwindow.appendChild(par);
+    }
+    const createButton = (text, func) => {
+        const button = document.createElement('button');
+        button.classList.add('BUTTON');
+        button.classList.add('simple');
+        button.textContent = text;
+        button.addEventListener('click', func);
+        playwindow.appendChild(button);
+    }
+    newPar(`${json.ServerName} - ${json.OnlinePlayers} / ${json.PlayerCap}`)
+    if (json.officialServer) {
+        const off = newPar('[OFFICIAL SERVER]');
+        off.style.backgroundColor = 'red';
+        off.style.width = '163px';
+        off.style.left = 'calc(50% - 82px)';
+    }
+    newPar(`WorldSize: ${json.WorldSize}x${json.WorldSize}`);
+    newPar(json.Description);
+    createButton('Connect', () => {
+        JoinServer();
+    });
+    playwindow.innerHTML += '<br>'
+    newPar('Public servers haven\'t been implemented yet');
+    Debug.Log('Retrieved server information and setup "Play" window.');
+}
+
+const setupThingi = async() => {
+    const req = await fetch('/info', { method: 'GET' });
+    const json = await req.json();
+    getMainServer(json);
+}
+
+setupThingi();

@@ -1,0 +1,18 @@
+.GameObject {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    z-index: 1;
+}
+
+.Player {
+    background: url('../src/player/playeridle.png');
+}
+
+.world {
+    position: absolute;
+    top: 0px;
+    bottom: 0px;
+    left: 0px;
+    right: 0px;
+}

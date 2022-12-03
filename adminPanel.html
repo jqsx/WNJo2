@@ -19,11 +19,16 @@
         transition: 0.2s;
         text-indent: 150px;
     }
+    
+    canvas {
+        border: black 1px solid;
+    }
 </style>
 
 <body>
     <div id="Mem" class="Memory"></div>
     <div id="CPU" style="position:absolute;left:300px;"></div>
+    <p id="Players"></p>
 
 </body>
 <script>
@@ -32,8 +37,10 @@
     document.body.appendChild(canvas);
     const mem = document.getElementById("Mem");
     const cpu = document.getElementById("CPU");
+    const playerD = document.getElementById("Players");
     let last = 0;
     const data = [];
+    const average = [];
     const lerp = (a, b, t) => {
         return a + (b - a) * t;
     }
@@ -46,14 +53,22 @@
             }
             let i = 0;
             ctx.beginPath();
-            ctx.moveTo(0, canvas.height);
-            data.forEach(e => {
-                let x = x / data.length;
-
-
+            ctx.moveTo(0, data.length == 0 ? canvas.height : average[0]);
+            let lastheight = 0;
+            average.forEach(e => {
+                for (let v = 0.1; v <= 1; v += 0.1) {
+                    lastheight = lerp(lastheight, canvas.height - canvas.height * e / 100, v);
+                    let x = (i + v) / average.length * canvas.width;
+                    ctx.lineTo(x, lastheight);
+                }
                 i++;
             })
+            ctx.stroke();
         }
+    }
+
+    const displayPlayers = () => {
+
     }
 
     const getData = async() => {
@@ -62,9 +77,20 @@
         });
         const json = await req.json();
         last = Math.floor(json.memory * 100 * 10) / 10;
-        mem.textContent = last + "%";
-        mem.style.setProperty('--Fill', last + 'px');
+        data.push(last);
+        let avg = 0;
+        data.forEach(e => {
+            avg += e;
+        })
+        avg /= data.length;
+        avg = Math.floor(avg * 10) / 10
+        if (average.length > 30) average.splice(0, 1);
+        average.push(avg);
+        mem.textContent = avg + "%";
+        mem.style.setProperty('--Fill', avg + 'px');
         cpu.textContent = json.cpuUsage;
+        playerD.textContent = json.Players;
+        refreshGraph();
         setTimeout(() => {
             getData();
         }, 1000);

@@ -43,7 +43,14 @@ fs.readFile(path.join(__dirname, 'accounts/Accounts.json'), (err, data) => {
     })
 });
 const QuickLog = new Map();
-const Players = new Map();
+var Players = new Map();
+fs.readFile(path.join(__dirname, './WorldSave/Players.json'), (err, data) => {
+    if (err) return console.log("Was unable to load player data.");
+    const parsed = JSON.parse(data);
+    parsed.forEach(e => {
+        Players.set(e.key, new Player(e.value.uuid, e.value.Name, e.value.position, e.value.rotation));
+    })
+});
 
 process.on('SIGINT', () => {
     process.exit();
@@ -58,7 +65,19 @@ process.on('exit', () => {
         })
     })
     fs.writeFileSync('./accounts/Accounts.json', JSON.stringify(_a));
-    fs.writeFileSync(path.join(__dirname, 'WorldSave/Players.json'), JSON.stringify(Players));
+    let _p = [];
+    Players.forEach((value, key, map) => {
+        _p.push({
+            key: key,
+            value: {
+                uuid: value.uuid,
+                Name: value.Name,
+                position: value.position,
+                rotation: value.rotation
+            }
+        })
+    })
+    fs.writeFileSync(path.join(__dirname, 'WorldSave/Players.json'), JSON.stringify(_p));
     console.log("\nSaved players, and accounts.");
 })
 
@@ -101,6 +120,13 @@ wss.on('connection', (ws, req) => {
 })
 
 const handleAccountActions = (ws, data) => {
+    if (data === undefined) {
+        console.log("An internal error occurred.");
+        return sendMessage(ws, {
+            status: 404,
+            message: "An internal error occurred."
+        })
+    }
     if ("Name" in data) {
         if ("Password" in data) {
             let acc = Accounts.get(data.Name)
@@ -114,7 +140,11 @@ const handleAccountActions = (ws, data) => {
                             coins: acc.points,
                             QuickLoginKey: _quicklog
                         })
-                        Players.set(acc.Name, new Player(acc._id, acc.Name));
+                        let plr = Players.get(acc.Name);
+                        if (plr === undefined) {
+                            Players.set(acc.Name, new NewPlayer(acc._id, acc.Name));
+                            console.log('new player')
+                        }
                         Clients.set(ws, { _id: acc._id });
                         QuickLog.set(_quicklog, acc.Name);
                         sendMessage(ws, {
@@ -164,15 +194,17 @@ const handleAccountActions = (ws, data) => {
                 let password = data.Password;
                 const passBuffer = Buffer.from(password);
                 password = aes256.encrypt(passBuffer).toString('base64');
-                Accounts.set(data.Name, new AccountInformation(data.Name, password, newUUID));
+                const newAcc = Accounts.set(data.Name, new AccountInformation(data.Name, password, newUUID));
                 sendJson(ws, {
                     type: "Login",
                     Name: data.Name,
-                    coins: acc.points,
+                    coins: newAcc.points,
                     QuickLoginKey: _quicklog
                 })
                 QuickLog.set(_quicklog, data.Name);
-                Players.set(data.Name, new Player(newUUID, data.Name));
+                if (!Players.has(data.Name)) {
+                    Players.set(data.Name, new NewPlayer(newUUID, data.Name));
+                }
                 Clients.set(ws, { _id: newUUID });
                 Players.get(data.Name).setData(ws, {
                     position: {
@@ -188,9 +220,9 @@ const handleAccountActions = (ws, data) => {
             }
         }
     } else if ("QuickLog" in data) {
-        let ql = QuickLog.get(data.QuickLog);
-        if (ql !== undefined) {
-            let acc = Accounts.get(ql);
+        let _quicklogaccess = QuickLog.get(data.QuickLog);
+        if (_quicklogaccess !== undefined) {
+            let acc = Accounts.get(_quicklogaccess);
             if (acc !== undefined) {
                 let _quicklog = uuid.v1();
                 sendJson(ws, {
@@ -198,6 +230,11 @@ const handleAccountActions = (ws, data) => {
                     Name: acc.Name,
                     coins: acc.points,
                     QuickLoginKey: _quicklog
+                })
+                Clients.forEach((value, key, map) => {
+                    if (value._id === acc._id) {
+                        key.terminate();
+                    }
                 })
                 Clients.set(ws, { _id: acc._id });
                 QuickLog.set(_quicklog, acc.Name);
@@ -246,16 +283,13 @@ class AccountInformation {
 }
 
 class Player {
-    constructor(uuid, Name) {
+    constructor(uuid, Name, position, rotation) {
         // generate new player around the map
         // random position
         this.uuid = uuid; // more auth
         this.Name = Name; // auth kinda
-        this.position = {
-            x: Math.floor((Math.random() - 0.5) * 2 * 5000),
-            y: Math.floor((Math.random() - 0.5) * 2 * 5000)
-        }
-        this.rotation = 0;
+        this.position = position;
+        this.rotation = rotation;
     }
 
     toClient() {
@@ -273,7 +307,12 @@ class Player {
          * rotation
          * 
          */
-        if (Clients.get(ws)._id === this.uuid) {
+        let Client = Clients.get(ws)
+        if (Client === undefined) return sendMessage(ws, {
+            status: 404,
+            message: "Client has been logged out on the server, please relogin again."
+        })
+        if (Client._id === this.uuid) {
             if (!("position" in data) || !("rotation" in data)) {
                 sendMessage(ws, {
                     status: 404,
@@ -282,8 +321,8 @@ class Player {
                 return false;
             }
             let diff = {
-                x: data.position.x - data.position.x,
-                y: data.position.y - data.position.y
+                x: this.position.x - data.position.x,
+                y: this.position.y - data.position.y
             }
             let distance = Math.abs(diff.x) + Math.abs(diff.y);
             if (distance <= 2) {
@@ -307,7 +346,23 @@ class Player {
             })
             return true;
         }
+        sendMessage(ws, {
+            status: 404,
+            message: JSON.stringify(Client) + JSON.stringify(this)
+        })
         return false;
+    }
+}
+
+class NewPlayer extends Player {
+    constructor(uuid, Name) {
+        // generate new player around the map
+        // random position
+        let position = {
+            x: Math.floor((Math.random() - 0.5) * 2 * 5000),
+            y: Math.floor((Math.random() - 0.5) * 2 * 5000)
+        }
+        super(uuid, Name, position, 0);
     }
 }
 
@@ -320,7 +375,7 @@ app.get('/info', (req, res) => {
         PlayerCap: config.WorldSettings.PlayerCap,
         WorldSize: config.WorldSettings.WorldSize,
         Description: config.WorldSettings.Description,
-        OnlinePlayers: Players.size,
+        OnlinePlayers: Clients.size,
         officialServer: true
     })
 })
@@ -363,8 +418,13 @@ app.post('/admin', (req, res) => {
         let ss = value.split(":");
         if (ss[0] === 'key' && ss[1] === config.AdminPanelKey) {
             cpuUsage = process.cpuUsage(cpuUsage);
+            onlinePlayers = [];
+            Players.forEach((value, key, map) => {
+                onlinePlayers.push(value.Name)
+            })
             res.send({
-                memory: Math.round(cpuUsage.user / 1024 / 1024 * 1000) / 1000
+                memory: Math.round(cpuUsage.user / 1024 / 1024 * 1000) / 1000,
+                Players: onlinePlayers
             })
         }
     })

@@ -28,6 +28,20 @@ body {
     background-color: rgba(200, 200, 200, 0.7);
     padding: 10px 20px 10px 20px;
     border-radius: 30px;
+    max-height: var(--w);
+}
+
+.WINDOW.scroller {
+    --w: 400px;
+    position: absolute;
+    width: var(--w);
+    justify-content: center;
+    display: grid;
+    background-color: rgba(200, 200, 200, 0.7);
+    padding: 10px 20px 10px 20px;
+    border-radius: 30px;
+    max-height: var(--w);
+    overflow-y: scroll;
 }
 
 .AccountInfo {
@@ -53,10 +67,16 @@ body {
     border: #CCC 1px solid;
     outline: none;
     transition: 0.3s;
-    box-shadow: rgba(100, 100, 100, 0.7) 3px 3px;
+    box-shadow: rgba(100, 100, 100, 0.7) 3px 3px 5px;
     transform: translate(-2px, -2px);
     font-size: large;
     border-radius: 20px;
+}
+
+.BUTTON.simple {
+    height: 30px;
+    width: 100%;
+    margin: 5px 0px 0px;
 }
 
 .RequireLogin {
@@ -82,7 +102,7 @@ body {
 .BUTTON:active {
     transform: translate(3px, 3px);
     background-color: rgba(100, 100, 100, 1);
-    box-shadow: rgba(100, 100, 100, 0.7) 0px 0px;
+    box-shadow: rgba(100, 100, 100, 0.7) 0px 0px 5px;
 }
 
 .AccountInfo:hover {
@@ -115,6 +135,7 @@ body {
     top: 0%;
     left: 0%;
     margin-top: 0px;
+    margin-bottom: 0px;
     position: absolute;
     font-size: 300px;
     color: #000;
@@ -180,6 +201,10 @@ body {
     user-select: none;
 }
 
+.TEXTBAR.bg {
+    background-color: transparent;
+}
+
 .TEXTBAR.keycode {
     right: 0px;
     width: 30%;
@@ -205,4 +230,81 @@ body {
     position: absolute;
     border: black 3px;
     background-color: lightblue;
+}
+
+.LOADINGSCREEN {
+    transition: 0.5s;
+    z-index: -1;
+}
+
+.LOADINGSCREEN.left {
+    background-color: white;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    right: 100%;
+    bottom: 0px;
+}
+
+.LOADINGSCREEN.right {
+    /* background: linear-gradient(90deg, #AAAAAA 1px, white 10px); */
+    background-color: white;
+    position: absolute;
+    top: 0px;
+    left: 100%;
+    right: 0px;
+    bottom: 0px;
+}
+
+.LOADINGSCREEN.Icon {
+    --Size: 300px;
+    background-color: transparent;
+    border: dotted calc(var(--Size) / 6) black;
+    width: var(--Size);
+    height: var(--Size);
+    position: absolute;
+    top: calc(50% - var(--Size) / 3 * 2);
+    left: calc(50% - var(--Size) / 3 * 2);
+    border-radius: 50%;
+    transition: 0.3s;
+    animation: LOADINGSCREENICONANIM 3s infinite linear;
+}
+
+@keyframes LOADINGSCREENICONANIM {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.Debug {
+    border: #333 0px solid;
+}
+
+.Debug.Window {
+    background-color: #222;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    display: flexbox;
+    height: 100px;
+    bottom: 0px;
+}
+
+.Debug.Message {
+    color: #fff;
+    overflow-wrap: normal;
+    width: 100%;
+    margin: 0px 0px 0px;
+    border: none;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 12px;
+}
+
+.Debug.Input {
+    outline: none;
+    border: none;
+    width: 50%;
+    bottom: 0px;
 }

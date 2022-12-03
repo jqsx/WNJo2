@@ -7,13 +7,15 @@
     <script defer src="./Client/ClientScripts/network.js"></script>
     <script defer src="./Client/ClientScripts/userInput.js"></script>
     <link rel="stylesheet" href="./Client/ClientStyles/styles.css">
+    <link rel="stylesheet" href="./Client/ClientStyles/gameObjects.css">
+    <link rel="json" href="./Client/src/test.json">
 </head>
 
 <body>
     <div id="FRAME-MainMenu" class="FRAME">
-        <h1 class=" MAINTITLE ">WNJO</h1>
+        <h1 class="MAINTITLE">WNJO</h1>
         <div class="WINDOW " style="top: 50%; background-color: transparent;">
-            <button class="RequireLogin">Play</button>
+            <button onclick="if (LoggedIn) openWindow('Play')" class="BUTTON RequireLogin">Play</button>
             <button onclick="openWindow('About')" class="BUTTON ">About</button>
             <button onclick="openWindow('ChangeLog')" class="BUTTON ">Change Log</button>
             <button class="BUTTON ">Forum (Coming soon)</button>
@@ -21,10 +23,10 @@
         </div>
         <button onclick="displayLoginWindow()" class="AccountInfo"></button>
         <div id="WINDOW-Login" class="WINDOW iAmHiding" style="display:flexbox; right: 30px; top: 150px;">
-            <h4 style="transform: translateX(50px);">Creating new account? <input id="FRAME.Login.isCreateNew" type="checkbox"></h4>
-            <input class="BUTTON " id="FRAME.Login.Name" type="text" placeholder="Name">
-            <input class="BUTTON " id="FRAME.Login.Password" type="password" placeholder="Password">
-            <button class="BUTTON " onclick="figuremyshitout()">Submit</button>
+            <h4 style="transform: translateX(50px); margin: 0px 0px 0px;">Creating new account? <input id="FRAME.Login.isCreateNew" type="checkbox"></h4>
+            <input style="height: 30px; font-size: 20px;" class="TEXTBAR" id="FRAME.Login.Name" type="text" placeholder="Name">
+            <input style="height: 30px; font-size: 20px;" class="TEXTBAR" id="FRAME.Login.Password" type="password" placeholder="Password">
+            <button class="BUTTON simple" onclick="figuremyshitout()">Submit</button>
         </div>
         <div id="WINDOW-Account" class="WINDOW iAmHiding" style="display:flexbox; right: 30px; top: 150px;">
         </div>
@@ -35,8 +37,16 @@
             <p>Welcome to wnjo, insert about here</p>
         </div>
         <div id="WINDOW-ChangeLog" class="WINDOW iAmHiding" style="display:flexbox; left: calc(50% - var(--w) / 2); top: 30%;">
-            <p class="TEXTBAR">Change Log</p>
-            <p>Implemented accounts and quicklog</p>
+            <p class="TEXTBAR" style="height: 30px; font-size: 20px;">Change Log</p>
+            <br>
+            <p class="TEXTBAR">Latest Changes</p>
+            <p class="TEXTBAR bg">- Implemented accounts and quicklog</p>
+            <p class="TEXTBAR bg">- Major safety improvements</p>
+            <p class="TEXTBAR bg">- Begun work on the renderer</p>
+            <p class="TEXTBAR bg">- Server code received a series of optimizations</p>
+            <p class="TEXTBAR bg">- Added a loading screen</p>
+            <p class="TEXTBAR bg">- Made sure that the play button is actually available now and doesn't stay disabled</p>
+
         </div>
         <div id="WINDOW-Settings" class="WINDOW iAmHiding" style="display:flexbox; left: calc(50% - var(--w) / 2); top: 30%; --w: 600px;">
             <p class="TEXTBAR">Settings</p>
@@ -63,6 +73,20 @@
                 mainMenuBG.style.backgroundPositionX = `${Math.floor(Math.cos(i * Math.PI / 360) * 500)}px`;
             }, 50)
         </script>
+    </div>
+    <div class="FRAME LOADINGSCREEN" style="background-color: transparent; --loading: 0px;">
+        <div class="LOADINGSCREEN left">
+        </div>
+        <div class="LOADINGSCREEN right">
+        </div>
+        <div class="LOADINGSCREEN Icon"></div>
+
+    </div>
+    <div style="z-index: 5; position: absolute; bottom: 0px; width: 50%;" class="Window">
+        <p style="border-radius: 0px 10px 0px 0px; width:fit-content; border: none; color: #ccc; background-color: #222; font-family:'Courier New', Courier, monospace; margin-left: -5px;" class="TEXTBAR">Developer Console Log</p>
+        <div id="DebugWindow" class="Debug Window scroller">
+        </div>
+        <!-- <input class="Debug Input" type="text"> -->
     </div>
 </body>
 
