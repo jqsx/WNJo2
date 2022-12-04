@@ -282,6 +282,9 @@ const openWindow = (id) => {
         Debug.Log(`Closed ${id}`);
     } else {
         Debug.Log(`Opened ${id}`);
+        if (id === 'Play') {
+            setupThingi();
+        }
     }
     Windows.forEach(e => {
         if (e !== id)
@@ -307,6 +310,7 @@ setTimeout(Update, 10);
 
 const getMainServer = (json) => {
     const playwindow = document.getElementById('WINDOW-Play');
+    playwindow.innerHTML = '';
     const newPar = (text) => {
         const par = document.createElement('p');
         par.classList.add('TEXTBAR');
@@ -314,12 +318,11 @@ const getMainServer = (json) => {
         return playwindow.appendChild(par);
     }
     const createButton = (text, func) => {
-        const button = document.createElement('button');
-        button.classList.add('BUTTON');
-        button.classList.add('simple');
-        button.textContent = text;
-        button.addEventListener('click', func);
-        playwindow.appendChild(button);
+        let b = document.createElement('button');
+        b.classList.add('BUTTON');
+        b.classList.add('simple');
+        b.addEventListener('click', func);
+        playwindow.appendChild(b);
     }
     newPar(`${json.ServerName} - ${json.OnlinePlayers} / ${json.PlayerCap}`)
     if (json.officialServer) {
@@ -330,11 +333,11 @@ const getMainServer = (json) => {
     }
     newPar(`WorldSize: ${json.WorldSize}x${json.WorldSize}`);
     newPar(json.Description);
-    createButton('Connect', () => {
-        JoinServer();
-    });
+    createButton('TEst', () => {
+        Debug.Log('test');
+    })
     playwindow.innerHTML += '<br>'
-    newPar('Public servers haven\'t been implemented yet');
+    newPar('Public servers will be available in the future and will be accessible here.');
     Debug.Log('Retrieved server information and setup "Play" window.');
 }
 
@@ -343,5 +346,3 @@ const setupThingi = async() => {
     const json = await req.json();
     getMainServer(json);
 }
-
-setupThingi();
