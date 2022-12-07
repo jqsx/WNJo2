@@ -6,7 +6,7 @@
 }
 
 .Player {
-    background: url('../src/player/playeridle.png');
+    /*background: url('../src/player/playeridle.png');*/
 }
 
 .world {
@@ -15,4 +15,10 @@
     bottom: 0px;
     left: 0px;
     right: 0px;
+}
+
+.FRAME.LightRenderer {
+    z-index: 2;
+    background-color: transparent !important;
+    pointer-events: none;
 }

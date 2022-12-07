@@ -22,6 +22,8 @@ const config = {
 
 const express = require('express');
 const cryptkhen = require('@ryanbekhen/cryptkhen')
+const simplex = require('simplex-noise');
+const noise = simplex.createNoise2D(() => config.WorldSettings.WorldSeed);
 const aes256 = new cryptkhen.AES256Encryption(config.AdminPanelKey);
 const os = require('os');
 const fs = require('fs');
@@ -48,8 +50,14 @@ fs.readFile(path.join(__dirname, './WorldSave/Players.json'), (err, data) => {
     if (err) return console.log("Was unable to load player data.");
     const parsed = JSON.parse(data);
     parsed.forEach(e => {
-        Players.set(e.key, new Player(e.value.uuid, e.value.Name, e.value.position, e.value.rotation));
+        Players.set(e.key, new Player(e.value.uuid, e.value.Name, e.value.position, e.value.rotation, e.value.inventory, e.value.stats));
     })
+});
+var Chunks = [];
+fs.readFile(path.join(__dirname, './WorldSave/Chunks.json'), (err, data) => {
+    if (err) return console.log("Was unable to load chunk data.");
+    const parsed = JSON.parse(data);
+    Chunks = parsed;
 });
 
 process.on('SIGINT', () => {
@@ -73,7 +81,9 @@ process.on('exit', () => {
                 uuid: value.uuid,
                 Name: value.Name,
                 position: value.position,
-                rotation: value.rotation
+                rotation: value.rotation,
+                inventory: value.inventory,
+                stats: value.stats
             }
         })
     })
@@ -282,14 +292,49 @@ class AccountInformation {
     }
 }
 
+const generateChunks = (position) => {
+    const chunkPosition = {
+        x: Math.floor(position.x / 256),
+        y: Math.floor(position.y / 256)
+    }
+    for (let y = 0; y <= 1; y++) {
+        for (let x = 0; x <= 1; x++) {
+            let chunk = Chunks.find(obj => obj.x === chunkPosition.x + x && obj.y === chunkPosition.y + y);
+            if (chunk !== undefined) continue;
+            let newchunk = {
+                x: chunkPosition.x + x,
+                y: chunkPosition.y + y,
+                Solids: []
+            }
+            for (let a = 0; a < 8; a++) {
+                for (let b = 0; b < 8; b++) {
+                    let height = noise(chunkPosition.x * 256 + a * 16, chunkPosition.y * 256 + b * 16);
+                    if (height > 0.8) {
+                        newchunk.Solids.push({
+                            id: 0,
+                            position: {
+                                x: chunkPosition.x * 256 + a * 16, 
+                                y: chunkPosition.y * 256 + b * 16
+                            }
+                        })
+                    }
+                }
+            }
+        }
+    }
+}
+
 class Player {
-    constructor(uuid, Name, position, rotation) {
+    constructor(uuid=String, Name=String, position, rotation=Number, inventory, stats) {
         // generate new player around the map
         // random position
         this.uuid = uuid; // more auth
         this.Name = Name; // auth kinda
         this.position = position;
         this.rotation = rotation;
+        this.inventory = inventory;
+        this.isSleeping = false;
+        this.stats = stats;
     }
 
     toClient() {
@@ -352,6 +397,19 @@ class Player {
         })
         return false;
     }
+
+    addItem(ws, item) {
+        let Client = Clients.get(ws)
+        if (Client === undefined) return sendMessage(ws, {
+            status: 404,
+            message: "Client has been logged out on the server, please relogin again."
+        })
+        if (Client._id === this.uuid) {
+            for (let i = 0; i < this.inventory.length; i++) {
+                
+            }
+        }
+    }
 }
 
 class NewPlayer extends Player {
@@ -362,7 +420,25 @@ class NewPlayer extends Player {
             x: Math.floor((Math.random() - 0.5) * 2 * 5000),
             y: Math.floor((Math.random() - 0.5) * 2 * 5000)
         }
-        super(uuid, Name, position, 0);
+        position = { x: 0, y: 0 } // temporary debug setpos to send everyone to 0 0 
+        let inventory = [];
+        for(let i = 0; i < 12; i++) {
+            let item = {
+                Name: null,
+                Quantity: 0,
+                Properites: []
+            }
+            inventory.push(item);
+        }
+        let stats = {
+            health: 45 + Math.floor(Math.random() * 20),
+            food: 70 + Math.floor(Math.random() * 50),
+            water: 80 + Math.floor(Math.random() * 50),
+            bleeding: 0,
+            radiation: 0
+        }
+
+        super(uuid, Name, position, 0, inventory, stats);
     }
 }
 

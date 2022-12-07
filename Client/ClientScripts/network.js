@@ -97,6 +97,7 @@ const waitForWebSocket = (ws, attempt) => {
         }
         return true;
     } else if (attempt > 20) {
+        window.location.reload();
         return false;
     } else {
         setTimeout(() => waitForWebSocket(ws, attempt + 1), 100);
@@ -216,10 +217,35 @@ const Connect = () => {
 }
 Connect();
 
+const GameAudio = new Audio('../src/sounds/wnjoSoundtracktemporary.mp3');
+GameAudio.loop = true;
+
+const playGameAudio = () => {
+    if (GameAudio.paused) try {
+        GameAudio.play();
+    } catch {}
+    setTimeout(() => {
+        playGameAudio();
+    }, 1000);
+}
+playGameAudio();
+
 const JoinServer = () => {
+    localStorage.setItem('loadedintoserver', true);
     LoadingScreen.setCurrentlyLoading();
     setTimeout(() => {
         document.getElementById('FRAME-MainMenu').classList.add('iAmHiding');
+    }, 500)
+    setTimeout(() => {
+        LoadingScreen.stopLoading();
+    }, 600)
+}
+
+const LeaveServer = () => {
+    localStorage.removeItem('loadedintoserver');
+    LoadingScreen.setCurrentlyLoading();
+    setTimeout(() => {
+        document.getElementById('FRAME-MainMenu').classList.remove('iAmHiding');
     }, 500)
     setTimeout(() => {
         LoadingScreen.stopLoading();
@@ -295,13 +321,28 @@ const openWindow = (id) => {
 const Update = () => {
     let StartTime = Date.now();
     if (socket.readyState === 1) {
+
+        RenderProcess.SyncPlayerWithServer();
+
+        UserInputProcess.GetInput();
+
         socket.send(JSON.stringify({
             type: "SYNC",
             Name: PlayerName,
             position: RendererData.LocalPlayer.position,
             rotation: RendererData.LocalPlayer.rotation
         }));
-        render();
+
+        UserInputProcess.SyncPlayerWithNetwork();
+
+        RenderProcess.CameraPositioning();
+        // Player Input Calculations
+
+        RenderProcess.PlayerRender();
+        RenderProcess.BackgroundScroll();
+        RenderProcess.CalculateFPS();
+        // add lighting calculations here at 5 fps
+        RendererData.Frames += 1;
     }
     let TimeDifference = Date.now() - StartTime;
     setTimeout(Update, 1000 / 30 - TimeDifference);
@@ -321,6 +362,7 @@ const getMainServer = (json) => {
         let b = document.createElement('button');
         b.classList.add('BUTTON');
         b.classList.add('simple');
+        b.textContent = text;
         b.addEventListener('click', func);
         playwindow.appendChild(b);
     }
@@ -333,11 +375,14 @@ const getMainServer = (json) => {
     }
     newPar(`WorldSize: ${json.WorldSize}x${json.WorldSize}`);
     newPar(json.Description);
-    createButton('TEst', () => {
-        Debug.Log('test');
-    })
+    
     playwindow.innerHTML += '<br>'
-    newPar('Public servers will be available in the future and will be accessible here.');
+    setTimeout(() => {
+        createButton('Connect', () => {
+            JoinServer();
+        });
+        newPar('Public servers will be available in the future and will be accessible here.');
+    }, 10)
     Debug.Log('Retrieved server information and setup "Play" window.');
 }
 
@@ -345,4 +390,8 @@ const setupThingi = async() => {
     const req = await fetch('/info', { method: 'GET' });
     const json = await req.json();
     getMainServer(json);
+}
+
+if (localStorage.getItem('loadedintoserver')) {
+    JoinServer();
 }

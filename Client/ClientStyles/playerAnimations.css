@@ -1,0 +1,190 @@
+.Player {
+    background-color: rgb(255, 245, 166);
+    --speed: 0.6s;
+    transition: 0.3s;
+    border: 0.0001em solid rgb(236, 228, 156); 
+}
+
+.Player.head {
+    position: absolute;
+    background: url('../src/player/playerFace.png');
+    width: 5px;
+    height: 5px;
+    background-size: 5px;
+    animation: headIdle calc(var(--speed) * 2) infinite ease-in-out;
+    border: none;
+}
+
+.Player.head.move {
+    animation: headMovement calc(var(--speed) / 2) infinite ease-in-out;
+}
+
+@keyframes headMovement {
+    0% {
+        transform: translate(3px, -1.3px);
+    }
+    50% {
+        transform: translate(3px, -1px);
+    }
+    100% {
+        transform: translate(3px, -1.3px);
+    }
+}
+
+@keyframes headIdle {
+    0% {
+        transform: translate(2px, -2px);
+    }
+    50% {
+        transform: translate(2px, -2.8px);
+    }
+    100% {
+        transform: translate(2px, -2px);
+    }
+}
+
+
+.Player.leftArm {
+    width: 1px;
+    height: 5px;
+    position: absolute;
+    transform: translate(0px, 3px) rotateZ(10deg);
+    animation: leftArmIdle calc(var(--speed) * 2) infinite ease-in-out;
+}
+
+.Player.leftArm.move {
+    animation: leftArmMovement var(--speed) infinite ease-in-out;
+}
+
+@keyframes leftArmMovement {
+    0% {
+        transform: translate(0px, 3px) rotateZ(10deg);
+    }
+    50% {
+        transform: translate(7px, 3px) rotateZ(-10deg);
+    }
+    100% {
+        transform: translate(0px, 3px) rotateZ(10deg);
+    }
+}
+
+@keyframes leftArmIdle {
+    0% {
+        transform: translate(0px, 3px) rotateZ(0deg);
+    }
+    50% {
+        transform: translate(0px, 2.5px) rotateZ(5deg);
+    }
+    100% {
+        transform: translate(0px, 3px) rotateZ(3deg);
+    }
+}
+
+.Player.rightArm {
+    width: 1px;
+    height: 5px;
+    position: absolute;
+    transform: translate(7px, 3px) rotateZ(-10deg);
+    animation: rightArmIdle calc(var(--speed) * 2) infinite ease-in-out;
+}
+
+.Player.rightArm.move {
+    animation: rightArmMovement var(--speed) infinite ease-in-out;
+}
+
+@keyframes rightArmMovement {
+    0% {
+        transform: translate(7px, 3px) rotateZ(-10deg);
+    }
+    50% {
+        transform: translate(0px, 3px) rotateZ(10deg);
+    }
+    100% {
+        transform: translate(7px, 3px) rotateZ(-10deg);
+    }
+}
+@keyframes rightArmIdle {
+    0% {
+        transform: translate(7px, 3px) rotateZ(0deg);
+    }
+    50% {
+        transform: translate(7px, 2.5px) rotateZ(-5deg);
+    }
+    100% {
+        transform: translate(7px, 3px) rotateZ(0deg);
+    }
+}
+
+.Player.body {
+    width: 4px;
+    height: 6px;
+    position: absolute;
+    transform: translate(2px, 3px);
+    animation: bodyIdle calc(var(--speed) * 2) infinite ease-in-out;
+}
+
+.Player.body.move {
+    animation: bodyMovement calc(var(--speed) / 2) infinite ease-in-out;
+}
+
+@keyframes bodyMovement {
+    0% {
+        transform: translate(2px, 3px) rotateZ(5deg);
+    }
+    50% {
+        transform: translate(2px, 4px) rotateZ(5deg);
+    }
+    100% {
+        transform: translate(2px, 3px) rotateZ(5deg);
+    }
+}
+
+@keyframes bodyIdle {
+    0% {
+        transform: translate(2px, 3px);
+    }
+    50% {
+        transform: translate(2px, 2px);
+    }
+    100% {
+        transform: translate(2px, 3px);
+    }
+}
+
+.Player.leftLeg {
+    width: 2px;
+    height: 6px;
+    position: absolute;
+    transform: translate(2px, 9px);
+}
+
+.Player.leftLeg.move {
+    animation: leftLegMovement var(--speed) infinite ease-in-out;
+}
+
+@keyframes leftLegMovement {
+    0% {
+        transform: translate(2px, 9px) rotateZ(0deg);
+    }
+    20% {
+        transform: translate(4px, 7px) rotateZ(0deg);
+    }
+    40% {
+        transform: translate(6px, 10px) rotateZ(0deg);
+    }
+    100% {
+        transform: translate(2px, 9px) rotateZ(0deg);
+    }
+}
+
+
+.Player.rightLeg {
+    width: 2px;
+    height: 6px;
+    position: absolute;
+    transform: translate(4px, 9px);
+}
+
+.Player.rightLeg.move {
+    animation: rightLegMovement var(--speed) infinite ease-in-out;
+}

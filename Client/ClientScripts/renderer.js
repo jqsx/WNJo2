@@ -1,14 +1,57 @@
 const screen = document.createElement('div');
+const lightRenderer = document.createElement('canvas');
+const LightCTX = lightRenderer.getContext('2d');
 const world = document.createElement('div');
 world.classList.add('world');
 document.body.appendChild(screen).appendChild(world);
 screen.classList.add('FRAME');
 screen.classList.add('Screen');
+lightRenderer.classList.add('FRAME');
+lightRenderer.classList.add('LightRenderer');
+screen.appendChild(lightRenderer);
+const setupEscapeMenu = () => {
+    let pauseMenu = document.createElement('div');
+    pauseMenu.style.top = 'calc(50% - 200px)';
+    pauseMenu.style.left = 'calc(50% - 200px)';
+    pauseMenu.classList.add('WINDOW');
+    pauseMenu.classList.add('iAmHiding');
+    pauseMenu.id = 'Menu-ESCAPE';
+    const newPar = (text) => {
+        const par = document.createElement('p');
+        par.classList.add('TEXTBAR');
+        par.textContent = text;
+        return pauseMenu.appendChild(par);
+    }
+    const createButton = (text, func) => {
+        let b = document.createElement('button');
+        b.classList.add('BUTTON');
+        b.classList.add('simple');
+        b.textContent = text;
+        b.addEventListener('click', func);
+        pauseMenu.appendChild(b);
+    }
+
+    newPar('PauseMenu')
+    createButton('Resume', () => {
+        pauseMenu.classList.toggle('iAmHiding');
+    })
+    createButton('Main menu', () => {
+        LeaveServer();
+    })
+    createButton('Settings', () => {
+        
+    })
+    screen.appendChild(pauseMenu);
+}
+
+setupEscapeMenu();
 
 const windowSize = {
     width: window.innerWidth,
     height: window.innerHeight
 }
+
+lightRenderer.width = windowSize.width; lightRenderer.height = windowSize.height;
 
 var Players = [];
 var Chunks = new Map();
@@ -46,13 +89,22 @@ const getStylePosition = (position, rotation, ignoreScale) => {
 }
 
 const RenderProcess = {
+    SyncPlayerWithServer: () => {
+        try {
+            let player = Players.find(player => player.Name === PlayerName);
+            if (player !== undefined) {
+                if (Math.abs(player.position.x - RendererData.LocalPlayer.position.x) > 2 && Math.abs(player.position.y - RendererData.LocalPlayer.position.y) > 2) {
+                    RendererData.LocalPlayer.position = player.position;
+                    RendererData.LocalPlayer.rotation = player.rotation;
+                }
+            }
+            
+        } catch (e) {
+            Debug.Error('Error while syncing local player position with server position: ' + e.message);
+        }
+    },
     CameraPositioning: () => {
         try {
-            let player = Players.filter(player => player.Name === PlayerName);
-            if (player.length > 0) {
-                RendererData.LocalPlayer.position = player[0].position;
-                RendererData.LocalPlayer.rotation = player[0].rotation;
-            }
             Camera.position = RendererData.LocalPlayer.position;
             Camera.scroll = { x: -Camera.position.x, y: -Camera.position.y };
             world.style.transform = getStylePosition(Camera.scroll, 0, false);
@@ -68,8 +120,39 @@ const RenderProcess = {
                         let _player = document.createElement('div');
                         _player.id = "PLAYER." + player.Name;
                         _player.classList.add('GameObject');
-                        _player.classList.add('Player');
-                        RendererData.PlayerElements.set(player.Name, screen.appendChild(_player));
+                        const newJoint = (joint) => {
+                            let test = document.createElement('div');
+                            test.classList.add('Player');
+                            test.classList.add(joint);
+                            test.classList.add('move');
+                            return _player.appendChild(test);
+                        }
+
+                        RendererData.PlayerElements.set(player.Name, { 
+                            MainParent: screen.appendChild(_player),
+                            body: newJoint('body'),
+                            leftArm: newJoint('leftArm'),
+                            rightArm: newJoint('rightArm'),
+                            leftLeg: newJoint('leftLeg'),
+                            rightLeg: newJoint('rightLeg'),
+                            head: newJoint('head'),
+                            removeMove: (p) => {
+                                p.body.classList.remove('move');
+                                p.leftArm.classList.remove('move');
+                                p.rightArm.classList.remove('move');
+                                p.leftLeg.classList.remove('move');
+                                p.rightLeg.classList.remove('move');
+                                p.head.classList.remove('move');
+                            },
+                            addMove: (p) => {
+                                p.body.classList.add('move');
+                                p.leftArm.classList.add('move');
+                                p.rightArm.classList.add('move');
+                                p.leftLeg.classList.add('move');
+                                p.rightLeg.classList.add('move');
+                                p.head.classList.add('move');
+                            }
+                        });
                     }
                 })
             }
@@ -80,9 +163,16 @@ const RenderProcess = {
                     let y = Math.abs(Camera.position.y - player.position.y) < window.innerHeight;
 
                     if (x && y) {
-                        value.style.transform = getStylePosition({ x: (Camera.position.x - player.position.x) * Camera.scale, y: (Camera.position.y - player.position.y) * Camera.scale }, player.rotation, false);
+                        value.MainParent.style.transform = getStylePosition({ x: (Camera.position.x - player.position.x) * Camera.scale, y: (Camera.position.y - player.position.y) * Camera.scale }, player.rotation, false);
+                        if (ClientInput.isKeyDown("e")) {
+                            value.addMove(value);
+                        }
+                        else {
+                            value.removeMove(value);
+                        }
                     }
                 } else {
+                    RendererData.PlayerElements.get(key).MainParent.remove();
                     setTimeout(() => {
                         RendererData.PlayerElements.delete(key);
                     }, 10)
@@ -103,12 +193,4 @@ const RenderProcess = {
             RendererData.Frames = 0;
         }
     }
-}
-
-const render = () => {
-    RenderProcess.CameraPositioning();
-    RenderProcess.PlayerRender();
-    RenderProcess.BackgroundScroll();
-    RenderProcess.CalculateFPS();
-    RendererData.Frames += 1;
 }

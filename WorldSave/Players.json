@@ -1,1 +1,32 @@
-[{"key":"jqsx","value":{"uuid":"58e9c620-7310-11ed-90e5-f7c012051450","Name":"jqsx","position":{"x":-272,"y":-93},"rotation":0}}]
+[
+  {
+    "key": "jqsx",
+    "value": {
+      "uuid": "58e9c620-7310-11ed-90e5-f7c012051450",
+      "Name": "jqsx",
+      "position": { "x": 0, "y": 0 },
+      "rotation": 0,
+      "inventory": [
+        { "Name": null, "Quantity": 0, "Properites": [] },
+        { "Name": null, "Quantity": 0, "Properites": [] },
+        { "Name": null, "Quantity": 0, "Properites": [] },
+        { "Name": null, "Quantity": 0, "Properites": [] },
+        { "Name": null, "Quantity": 0, "Properites": [] },
+        { "Name": null, "Quantity": 0, "Properites": [] },
+        { "Name": null, "Quantity": 0, "Properites": [] },
+        { "Name": null, "Quantity": 0, "Properites": [] },
+        { "Name": null, "Quantity": 0, "Properites": [] },
+        { "Name": null, "Quantity": 0, "Properites": [] },
+        { "Name": null, "Quantity": 0, "Properites": [] },
+        { "Name": null, "Quantity": 0, "Properites": [] }
+      ],
+      "stats": {
+        "health": 54,
+        "food": 99,
+        "water": 107,
+        "bleeding": 0,
+        "radiation": 0
+      }
+    }
+  }
+]
